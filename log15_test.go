@@ -129,11 +129,12 @@ func TestLogfmt(t *testing.T) {
 	var nilVal *testtype
 
 	l, buf := testFormatter(LogfmtFormat())
-	l.Error("some message", "x", 1, "y", 3.2, "equals", "=", "quote", "\"", "nil", nilVal)
+	l.Error("some message", "x", 1, "y", 3.2, "equals", "=", "quote", "\"",
+		"nil", nilVal, "carriage_return", "bang"+string('\r')+"foo", "tab", "bar	baz", "newline", "foo\nbar")
 
 	// skip timestamp in comparison
 	got := buf.Bytes()[27:buf.Len()]
-	expected := []byte(`lvl=eror msg="some message" x=1 y=3.200 equals="=" quote="\"" nil=nil` + "\n")
+	expected := []byte(`lvl=eror msg="some message" x=1 y=3.200 equals="=" quote="\"" nil=nil carriage_return="bang\rfoo" tab="bar\tbaz" newline="foo\nbar"` + "\n")
 	if !bytes.Equal(got, expected) {
 		t.Fatalf("Got %s, expected %s", got, expected)
 	}
@@ -254,14 +255,13 @@ func TestNetHandler(t *testing.T) {
 	go func() {
 		c, err := l.Accept()
 		if err != nil {
-			t.Errorf("Failed to accept conneciton: %v", err)
-			return
+			t.Fatalf("Failed to accept connection: %v", err)
 		}
 
 		rd := bufio.NewReader(c)
 		s, err := rd.ReadString('\n')
 		if err != nil {
-			t.Errorf("Failed to read string: %v", err)
+			t.Fatalf("Failed to read string: %v", err)
 		}
 
 		got := s[27:]
